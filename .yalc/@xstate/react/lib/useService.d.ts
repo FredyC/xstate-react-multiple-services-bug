@@ -1,0 +1,3 @@
+import { EventObject, State, Interpreter, Typestate } from 'xstate';
+export declare function useService<TContext, TEvent extends EventObject, TTypestate extends Typestate<TContext> = any>(service: Interpreter<TContext, any, TEvent, TTypestate>): [State<TContext, TEvent, any, TTypestate>, Interpreter<TContext, any, TEvent, TTypestate>['send'], Interpreter<TContext, any, TEvent, TTypestate>];
+//# sourceMappingURL=useService.d.ts.map
