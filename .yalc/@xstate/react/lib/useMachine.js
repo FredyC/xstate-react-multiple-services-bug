@@ -95,7 +95,7 @@ function useMachine(machine, options) {
         }
     }
     var context = options.context, guards = options.guards, actions = options.actions, activities = options.activities, services = options.services, delays = options.delays, rehydratedState = options.state, interpreterOptions = __rest(options, ["context", "guards", "actions", "activities", "services", "delays", "state"]);
-    var service = useConstant_1.default(function () {
+    var customMachine = useConstant_1.default(function () {
         var machineConfig = {
             context: context,
             guards: guards,
@@ -104,22 +104,33 @@ function useMachine(machine, options) {
             services: services,
             delays: delays
         };
-        var createdMachine = machine.withConfig(machineConfig, __assign(__assign({}, machine.context), context));
-        return xstate_1.interpret(createdMachine, interpreterOptions).start(rehydratedState ? xstate_1.State.create(rehydratedState) : undefined);
+        return machine.withConfig(machineConfig, __assign(__assign({}, machine.context), context));
     });
-    var _b = __read(react_1.useState(service.state), 2), state = _b[0], setState = _b[1];
+    var service = useConstant_1.default(function () {
+        return xstate_1.interpret(customMachine, interpreterOptions);
+    });
+    var _b = __read(react_1.useState(function () {
+        return rehydratedState
+            ? xstate_1.State.create(rehydratedState)
+            : customMachine.initialState;
+    }), 2), state = _b[0], setState = _b[1];
     var effectActionsRef = react_1.useRef([]);
     var layoutEffectActionsRef = react_1.useRef([]);
     react_1.useLayoutEffect(function () {
-        service.onTransition(function (currentState) {
+        service
+            .onTransition(function (currentState) {
             var _a, _b;
+            // Only change the current state if:
+            // - the incoming state is not the initial state (since it's already set)
+            // - AND the incoming state actually changed
             if (currentState.changed) {
                 setState(currentState);
             }
             if (currentState.actions.length) {
                 var reactEffectActions = currentState.actions.filter(function (action) {
                     return (typeof action.exec === 'function' &&
-                        '__effect' in action.exec);
+                        '__effect' in
+                            action.exec);
                 });
                 var _c = __read(utils_1.partition(reactEffectActions, function (action) {
                     return action.exec.__effect === ReactEffectType.Effect;
@@ -127,9 +138,8 @@ function useMachine(machine, options) {
                 (_a = effectActionsRef.current).push.apply(_a, __spread(effectActions.map(function (effectAction) { return [effectAction, currentState]; })));
                 (_b = layoutEffectActionsRef.current).push.apply(_b, __spread(layoutEffectActions.map(function (layoutEffectAction) { return [layoutEffectAction, currentState]; })));
             }
-        });
-        // if service.state has not changed React should just bail out from this update
-        setState(service.state);
+        })
+            .start(rehydratedState ? xstate_1.State.create(rehydratedState) : undefined);
         return function () {
             service.stop();
         };

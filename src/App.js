@@ -1,3 +1,4 @@
+import React from "react";
 import { Machine, actions } from "xstate";
 import { useMachine } from "@xstate/react";
 
@@ -31,14 +32,21 @@ const machine = Machine({
   },
   states: {
     init: {
-      entry: actions.send("TEST", { to: "child" }),
+      on: {
+        START: {
+          actions: actions.send("TEST", { to: "child" }),
+        },
+      },
     },
     next: {},
   },
 });
 
 export default function App() {
-  const [, , service] = useMachine(machine);
+  const [, send, service] = useMachine(machine);
   console.log("render", "sessionId =", service.sessionId);
+  React.useLayoutEffect(() => {
+    send("START");
+  }, []);
   return null;
 }
